@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
 func readClauses(nClauses int) [][]int16 {
 	clauses := make([][]int16, 3)
@@ -18,18 +21,16 @@ func readClauses(nClauses int) [][]int16 {
 func solveClauses(clauses [][]int16, nClauses, nVar int) int64 {
 	iVar := make([]int64, nVar)
 	for i := 0; i < nVar; i++ {
-		iVar[i] = int64(2 ^ i)
-
+		iVar[i] = int64(math.Pow(2, float64(i)))
 	}
 
-	var maxNumber int64 = int64(2 ^ nVar)
+	var maxNumber int64 = int64(math.Pow(2, float64(nVar)))
 	var number int64
 	var variable int16
 	var c int
 
 	for number = 0; number < maxNumber; number++ {
 		for c = 0 ; c < nClauses ; c++ {
-
 			variable = clauses[0][c]
 			if variable > 0 && (number&iVar[variable-1]) > 0 {
 				continue
@@ -56,7 +57,6 @@ func solveClauses(clauses [][]int16, nClauses, nVar int) int64 {
 		if c == nClauses {
 			return number
 		}
-
 	}
 	return -1
 }
@@ -72,7 +72,7 @@ func main() {
 	if solution > 0 {
 		fmt.Printf("Solution found [%d]: ", solution)
 		for i := 0; i < nVar; i++ {
-			fmt.Printf("%d ", int((solution & int64(2 ^ i)) / int64(2 ^ i)))
+			fmt.Printf("%d ", int((solution & int64(math.Pow(2, float64(i)))) / int64(math.Pow(2, float64(i)))))
 		}
 		fmt.Printf("\n")
 	} else {
