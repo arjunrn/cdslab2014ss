@@ -6,32 +6,55 @@ import (
 	"os"
 	"bufio"
 	"container/list"
+	"sort"
 )
 
 const(
-	BucketNum = 100
+	BucketNum = (0x7E - 0x21 + 1)
 )
 
 type Bucket struct{
-	keys []string;
+	keys list.List
+	bucketArr []string
 }
 
+func (b *Bucket) getLength() int {
+	return b.keys.Len()
+}
 
+func (b *Bucket) sort()  {
+	b.bucketArr = make([]string, b.keys.Len())
+	i := 0
+	for e := b.keys.Front() ; e != nil ; e = e.Next() {
+		b.bucketArr[i] = e.Value.(string)
+		i++
+	}
+	sort.Strings(b.bucketArr)
+}
 
+func bucketsort(inputString []string, writer *bufio.Writer) {
+	buckets := make([]Bucket, BucketNum)
 
-func bucketsort(inputString []string) {
 	for i := range inputString {
 		charString := inputString[i]
-		var stringValue uint64 = 0
-		for j := 0 ; j < len(charString) ; j++ {
-			line := uint64(charString[j])
-			stringValue += (line << ( 8 * uint(j) ))
+		bucketIndex := uint8(charString[0]) - 0x21
+		if bucketIndex >= BucketNum {
+			panic(fmt.Sprintf("Index out of bucket slice range: %d for index: %d", bucketIndex, i))
+		}
+		buckets[bucketIndex].keys.PushFront(charString);
+
+	}
+
+	for i := range buckets {
+		fmt.Println("Bucket %d size: %d", i, buckets[i].getLength())
+		buckets[i].sort()
+	}
+
+	for i := range buckets {
+		for j := range buckets[i].bucketArr{
+			writer.WriteString(buckets[i].bucketArr[j])
 		}
 	}
-	//buckets []Bucket := make([]Bucket, BucketNum)
-	for i := 0 ; i < BucketNum ; i++{
-		
-	}	
 }
 
 func main(){
@@ -43,6 +66,17 @@ func main(){
 			panic(err)
 		}
 	}()
+
+	fo, err := os.Create("bucketsort.out")
+    if err != nil { panic(err) }
+    // close fo on exit and check for its returned error
+    defer func() {
+        if err := fo.Close(); err != nil {
+            panic(err)
+        }
+    }()
+    // make a write buffer
+    writer := bufio.NewWriter(fo)
 
 	reader := bufio.NewReader(fi)
 	list := list.New()
@@ -60,11 +94,11 @@ func main(){
 	number_slice := make([]string, list.Len())
 	fmt.Println("Length of Number Slice: ", len(number_slice))
 
-
 	i := 0
-	for e := list.Front() ; i < len(number_slice) ;  e.Next() {
+	for e := list.Front() ; e != nil ;  e = e.Next() {
+		//fmt.Println(i," : ", e.Value.(string))
 		number_slice[i] = e.Value.(string)
 		i++
 	}
-	bucketsort(number_slice)
+	bucketsort(number_slice, writer)
 }
