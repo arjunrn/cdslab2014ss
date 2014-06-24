@@ -56,7 +56,7 @@ func bucketSort(buckets []Bucket) {
 }
 
 func main() {
-	runtime.GOMAXPROCS(4)
+	runtime.GOMAXPROCS(8)
 	fi, err := os.Open("bucketsort.in")
 	if err != nil { panic(err) }
 
