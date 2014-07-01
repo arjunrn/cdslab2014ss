@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"time"
 )
 
 func readClauses(nClauses int) [][]int16 {
@@ -66,9 +67,9 @@ func main() {
 	fmt.Scanf("%d %d", &nClauses, &nVar)
 
 	clauses := readClauses(nClauses)
-
+	startTime := time.Now()
 	solution := solveClauses(clauses, nClauses, nVar)
-
+	fmt.Printf("Time to solve: %s\n", time.Since(startTime))
 	if solution > 0 {
 		fmt.Printf("Solution found [%d]: ", solution)
 		for i := 0; i < nVar; i++ {

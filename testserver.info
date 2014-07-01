@@ -1,0 +1,4 @@
+ssh fcdsrl08.zih.tu-dresden.de
+user: studentXX
+password: FCDstun_XX
+(with XX in {01, ...., 05})

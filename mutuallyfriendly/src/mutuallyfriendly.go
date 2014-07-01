@@ -25,15 +25,15 @@ func friendlyNumbers(start, end uint64) {
 	theNum := make([]uint64, last)
 	num := make([]uint64, last)
 	den := make([]uint64, last)
-	var ii, sum, done, factor uint64
+
 
 	doneChannel :=make(chan FriendlyResult)
 
 	for i := start ; i <= end ; i++ {
 		wg.Add(1)
 		go func(i uint64,wg *sync.WaitGroup, doneChan chan FriendlyResult) {
+			var sum, done, factor uint64
 
-			ii = i-start
 			sum = 1+i
 			done = i
 			factor = 2
@@ -93,7 +93,7 @@ func friendlyNumbers(start, end uint64) {
 }
 
 func main() {
-	runtime.GOMAXPROCS(8)
+	runtime.GOMAXPROCS(1)
 	var start, end uint64;
 
 	for {
