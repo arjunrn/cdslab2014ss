@@ -10,19 +10,17 @@ import (
 	"time"
 	"bytes"
 	"runtime"
+	"sync"
 )
 
 const (
-	BucketNum = (0x7E - 0x21 + 1)
-	//	ReadBufferSize = 8
-	ReadBufferSize  = 1024 * 1024 * 1204 * 8
-	WriteBufferSize = 1024
+	BucketNum      = (0x7E - 0x21 + 1)
+	ReadBufferSize = 1024 * 1024 * 1204 * 8
 )
 
 type Bucket struct{
 	keys        list.List
 	bucketArr   []string
-	doneChannel chan int
 }
 
 func (b *Bucket) getLength() int {
@@ -41,18 +39,16 @@ func (b *Bucket) sort() {
 }
 
 func bucketSort(buckets []Bucket) {
-
-
+	var wg sync.WaitGroup
+	wg.Add(len(buckets))
 	for i := range buckets {
 		buckets[i].doneChannel = make(chan int)
-		//	fmt.Println("Bucket %d size: %d", i, buckets[i].getLength())
-		go buckets[i].sort()
+		go func(i int, wg sync.WaitGroup) {
+			defer wg.Done()
+			buckets[i].sort()
+		}(i, wg)
 	}
-
-	for i := range buckets {
-		<-buckets[i].doneChannel
-	}
-
+	wg.Wait()
 }
 
 func main() {
