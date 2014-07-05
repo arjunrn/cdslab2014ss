@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"math"
-	"sync"
 	"time"
 	"runtime"
+	"sync"
 )
 
 func readClauses(nClauses int) [][]int16 {
@@ -28,60 +28,43 @@ func solveClauses(clauses [][]int16, nClauses, nVar int) int64 {
 	}
 
 	var maxNumber int64 = int64(math.Pow(2, float64(nVar)))
-	var wg sync.WaitGroup
-	wg.Add(maxNumber)
 
-	resultChan := make(chan int64, maxNumber)
-
-	var i int64
-	for i = 0; i < maxNumber; i++ {
-		go func(clauses [][]int16, solNum int64, resChan chan int64) {
-			defer wg.Done()
-			var c int
-			var variable int16
-			for c = 0 ; c < nClauses ; c++ {
-
+	var solNum int64
+	for solNum = 0; solNum < maxNumber; solNum++ {
+		var variable int16
+		var c int
+		allCondTrue := true
+		var wg sync.WaitGroup
+		wg.Add(nClauses)
+		for c = 0 ; c < nClauses ; c++ {
+			go func(c int) {
+				defer wg.Done()
 				variable = clauses[0][c]
 				if variable > 0 && (solNum&iVar[variable-1]) > 0 {
-					continue
+					return
 				} else if variable < 0 && (solNum&iVar[-variable-1] == 0) {
-					continue
+					return
 				}
 
 				variable = clauses[1][c]
 				if variable > 0 && (solNum&iVar[variable-1]) > 0 {
-					continue
+					return
 				} else if variable < 0 && (solNum&iVar[-variable-1] == 0) {
-					continue
+					return
 				}
 
 				variable = clauses[2][c]
 				if variable > 0 && (solNum&iVar[variable-1]) > 0 {
-					continue
+					return
 				} else if variable < 0 && (solNum&iVar[-variable-1] == 0) {
-					continue
+					return
 				}
-				break
-			}
-
-			if c == nClauses {
-				resChan <- solNum
-			}else {
-				resChan <- -1
-			}
-
-
-		}(clauses, i, resultChan)
-	}
-
-	go func(wg sync.WaitGroup, resultChan chan int64) {
+				allCondTrue = false
+			}(c)
+		}
 		wg.Wait()
-		close(resultChan)
-	}(wg, resultChan)
-
-	for result := range resultChan {
-		if result > 0 {
-			return result
+		if allCondTrue {
+			return solNum
 		}
 	}
 	return -1

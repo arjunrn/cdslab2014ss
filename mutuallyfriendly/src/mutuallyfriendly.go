@@ -28,9 +28,8 @@ func friendlyNumbers(start, end uint64) {
 
 
 	doneChannel :=make(chan FriendlyResult)
-
+	wg.Add(int(last))
 	for i := start ; i <= end ; i++ {
-		wg.Add(1)
 		go func(i uint64,wg *sync.WaitGroup, doneChan chan FriendlyResult) {
 			var sum, done, factor uint64
 
@@ -65,7 +64,6 @@ func friendlyNumbers(start, end uint64) {
 	go func(){
 		wg.Wait()
 		close(doneChannel)
-//		fmt.Printf("Closed channel\n")
 	}()
 
 	recCount := 0
@@ -77,7 +75,6 @@ func friendlyNumbers(start, end uint64) {
 		recCount++
 	}
 	fmt.Printf("Received Count: %d\n",recCount)
-//	fmt.Printf("Finished waiting for go routines.\n")
 
 	var i, j uint64
 
@@ -85,7 +82,6 @@ func friendlyNumbers(start, end uint64) {
 		for j = i+1 ; j < last ; j++ {
 			if (num[i] == num[j]) && (den[i] == den[j]) {
 				fmt.Printf("%d and %d are FRIENDLY\n", theNum[i], theNum[j])
-//				fmt.Printf("%d/%d and %d/%d\n",num[i],den[i],num[j],den[j])
 			}
 		}
 	}
@@ -93,7 +89,7 @@ func friendlyNumbers(start, end uint64) {
 }
 
 func main() {
-	runtime.GOMAXPROCS(1)
+	runtime.GOMAXPROCS(8)
 	var start, end uint64;
 
 	for {
