@@ -8,6 +8,8 @@ import (
 	"sync"
 )
 
+const CORE_COUNT = 4
+
 func readClauses(nClauses int) [][]int16 {
 	clauses := make([][]int16, 3)
 	clauses[0] = make([]int16, nClauses)
@@ -28,58 +30,84 @@ func solveClauses(clauses [][]int16, nClauses, nVar int) int64 {
 	}
 
 	var maxNumber int64 = int64(math.Pow(2, float64(nVar)))
-
 	var solNum int64
+
+	coreAssignmentCount := int(nClauses / CORE_COUNT)
+	if coreAssignmentCount == 0 {
+		coreAssignmentCount = 1
+	}
+	fmt.Printf("Core Assignment: %d\n", coreAssignmentCount)
+
 	for solNum = 0; solNum < maxNumber; solNum++ {
-		var variable int16
 		var c int
-		allCondTrue := true
+
 		var wg sync.WaitGroup
-		wg.Add(nClauses)
-		for c = 0 ; c < nClauses ; c++ {
-			go func(c int) {
+		allCondTrue := true
+
+		for c = 0 ; c < nClauses ; c+=coreAssignmentCount {
+
+			wg.Add(1)
+
+			go func(startClause int) {
 				defer wg.Done()
-				variable = clauses[0][c]
-				if variable > 0 && (solNum&iVar[variable-1]) > 0 {
-					return
-				} else if variable < 0 && (solNum&iVar[-variable-1] == 0) {
-					return
+				var endClause int
+				if startClause+coreAssignmentCount > nClauses {
+					endClause = nClauses
+				} else {
+					endClause = startClause+coreAssignmentCount
+				}
+				var variable int16
+				var i int
+
+				for i = startClause; i < endClause; i++ {
+					variable = clauses[0][i]
+					if variable > 0 && (solNum&iVar[variable-1]) > 0 {
+						continue
+					} else if variable < 0 && (solNum&iVar[-variable-1] == 0) {
+						continue
+					}
+
+					variable = clauses[1][i]
+					if variable > 0 && (solNum&iVar[variable-1]) > 0 {
+						continue
+					} else if variable < 0 && (solNum&iVar[-variable-1] == 0) {
+						continue
+					}
+
+					variable = clauses[2][i]
+					if variable > 0 && (solNum&iVar[variable-1]) > 0 {
+						continue
+					} else if variable < 0 && (solNum&iVar[-variable-1] == 0) {
+						continue
+					}
+					break
 				}
 
-				variable = clauses[1][c]
-				if variable > 0 && (solNum&iVar[variable-1]) > 0 {
-					return
-				} else if variable < 0 && (solNum&iVar[-variable-1] == 0) {
-					return
+				if i != endClause {
+					allCondTrue = false
 				}
 
-				variable = clauses[2][c]
-				if variable > 0 && (solNum&iVar[variable-1]) > 0 {
-					return
-				} else if variable < 0 && (solNum&iVar[-variable-1] == 0) {
-					return
-				}
-				allCondTrue = false
 			}(c)
 		}
 		wg.Wait()
 		if allCondTrue {
 			return solNum
 		}
+
 	}
 	return -1
 }
 
 func main() {
-	runtime.GOMAXPROCS(1)
+	runtime.GOMAXPROCS(CORE_COUNT)
 	var nClauses, nVar int
 	fmt.Scanf("%d %d", &nClauses, &nVar)
 
 	clauses := readClauses(nClauses)
 
 	startTime := time.Now()
-	solution := solveClauses(clauses,nClauses, nVar)
-	fmt.Printf("Time to solve: %s\n",time.Since(startTime))
+	solution := solveClauses(clauses, nClauses, nVar)
+	fmt.Printf("Time to solve: %s\n", time.Since(startTime))
 
 	if solution > 0 {
 		fmt.Printf("Solution found [%d]: ", solution)
