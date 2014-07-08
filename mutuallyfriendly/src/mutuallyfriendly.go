@@ -7,6 +7,8 @@ import (
 	"sync"
 )
 
+const CORE_COUNT = 1
+
 func gcd(u , v uint64) uint64 {
 	if v == 0 {
 		return u
@@ -26,58 +28,55 @@ func friendlyNumbers(start, end uint64) {
 	num := make([]uint64, last)
 	den := make([]uint64, last)
 
+	coreAssignmentCount := uint64(last / CORE_COUNT)
+	if coreAssignmentCount == 0 {
+		coreAssignmentCount = 1
+	}
+	fmt.Printf("Core Assignment: %d\n", coreAssignmentCount)
 
-	doneChannel :=make(chan FriendlyResult)
-	wg.Add(int(last))
-	for i := start ; i <= end ; i++ {
-		go func(i uint64,wg *sync.WaitGroup, doneChan chan FriendlyResult) {
+	for n := start ; n <= end ; n+=coreAssignmentCount {
+		wg.Add(1)
+		go func(startInt uint64) {
 			var sum, done, factor uint64
-
-			sum = 1+i
-			done = i
-			factor = 2
-
-			for factor < done {
-				if (i%factor) == 0 {
-					sum += (factor+(i/factor))
-					done = i/factor
-					if done == factor {
-						sum -= factor
-					}
-				}
-				factor++
+			var endInt uint64
+			if startInt+coreAssignmentCount > end {
+				endInt = end
+			} else {
+				endInt = startInt+coreAssignmentCount
 			}
+			for i := startInt; i < endInt; i++ {
+				sum = 1+i
+				done = i
+				factor = 2
 
-			numerator := sum
-			denominator := i
-			n := gcd(numerator, denominator)
-			numerator/=n
-			denominator/=n
-			res := FriendlyResult{}
-			res.number = i; res.numerator = numerator; res.denominator=denominator
-			doneChan <- res
+				for factor < done {
+					if (i%factor) == 0 {
+						sum += (factor+(i/factor))
+						done = i/factor
+						if done == factor {
+							sum -= factor
+						}
+					}
+					factor++
+				}
+
+				numerator := sum
+				denominator := i
+				n := gcd(numerator, denominator)
+				numerator/=n
+				denominator/=n
+				solIndex := i-start
+				num[solIndex] = numerator
+				den[solIndex] = denominator
+				theNum[solIndex] = i
+			}
 			wg.Done()
-
-		}(i,&wg,doneChannel)
+		}(n)
 	}
 
-	go func(){
-		wg.Wait()
-		close(doneChannel)
-	}()
-
-	recCount := 0
-	for res := range doneChannel{
-		i:=res.number-start
-		theNum[i]=res.number
-		num[i]=res.numerator
-		den[i]=res.denominator
-		recCount++
-	}
-	fmt.Printf("Received Count: %d\n",recCount)
+	wg.Wait()
 
 	var i, j uint64
-
 	for i = 0 ; i < last ; i++ {
 		for j = i+1 ; j < last ; j++ {
 			if (num[i] == num[j]) && (den[i] == den[j]) {
