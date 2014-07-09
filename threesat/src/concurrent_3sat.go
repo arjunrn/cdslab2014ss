@@ -60,6 +60,10 @@ func solveClauses(clauses [][]int16, nClauses, nVar int) int64 {
 				var i int
 
 				for i = startClause; i < endClause; i++ {
+					if !allCondTrue{
+						return
+					}
+
 					variable = clauses[0][i]
 					if variable > 0 && (solNum&iVar[variable-1]) > 0 {
 						continue
