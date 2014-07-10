@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-const CORE_COUNT = 4
+const CORE_COUNT = 1
 
 func readClauses(nClauses int) [][]int16 {
 	clauses := make([][]int16, 3)
@@ -19,11 +19,99 @@ func readClauses(nClauses int) [][]int16 {
 	for i := 0; i < nClauses; i++ {
 		fmt.Scanf("%d %d %d", &clauses[0][i], &clauses[1][i], &clauses[2][i])
 	}
-
 	return clauses
 }
 
-func solveClauses(clauses [][]int16, nClauses, nVar int) int64 {
+func testClause(clauses [][]int16, iVar []int64, nClauses int64, solChan chan int64, numberChan chan int64) {
+	var solNum, i int64
+	var variable int16
+	for {
+		solNum = <-numberChan
+		if solNum == -1 {
+			return
+		}
+		for i = 0; i < nClauses; i++ {
+			variable = clauses[0][i]
+			if variable > 0 && (solNum&iVar[variable-1]) > 0 {
+				continue
+			} else if variable < 0 && (solNum&iVar[-variable-1] == 0) {
+				continue
+			}
+
+			variable = clauses[1][i]
+			if variable > 0 && (solNum&iVar[variable-1]) > 0 {
+				continue
+			} else if variable < 0 && (solNum&iVar[-variable-1] == 0) {
+				continue
+			}
+
+			variable = clauses[2][i]
+			if variable > 0 && (solNum&iVar[variable-1]) > 0 {
+				continue
+			} else if variable < 0 && (solNum&iVar[-variable-1] == 0) {
+				continue
+			}
+			break
+		}
+
+		if i == nClauses {
+			solChan <- solNum
+		} else {
+			solChan <- -1
+		}
+	}
+
+}
+
+func solveClauses(nClauses int, clauses [][]int16, nVar int) int64 {
+	iVar := make([]int64, nVar)
+	for i := 0; i < nVar; i++ {
+		iVar[i] = int64(math.Pow(2, float64(i)))
+	}
+
+	var maxNumber int64 = int64(math.Pow(2, float64(nVar)))
+
+	workerChans := make([]chan int64, CORE_COUNT)
+
+	for i := range workerChans {
+		workerChans[i] = make(chan int64, 1)
+	}
+
+	solChan := make(chan int64)
+	for i := range workerChans {
+		go testClause(clauses, iVar, int64(nClauses), solChan, workerChans[i])
+	}
+
+	var counter int64 = 0
+	var i int64
+	var result int64 = -1
+	var resultFinal int64 = -1
+	for counter < maxNumber {
+
+		for i = 0; i < CORE_COUNT && counter+i < maxNumber; i++ {
+			workerChans[i] <- counter
+			counter++
+		}
+
+		for i = 0; i < CORE_COUNT && counter+i < maxNumber; i++ {
+			result = <-solChan
+			if result >= 0 {
+				resultFinal = result
+			}
+		}
+
+		if resultFinal >= 0 {
+			for i = 0; i < CORE_COUNT; i++ {
+				workerChans[i] <- -1
+			}
+			return resultFinal
+		}
+	}
+
+	return -1
+}
+
+func solveClausesOld(nClauses int, clauses [][]int16, nVar int) int64 {
 	iVar := make([]int64, nVar)
 	for i := 0; i < nVar; i++ {
 		iVar[i] = int64(math.Pow(2, float64(i)))
@@ -60,7 +148,7 @@ func solveClauses(clauses [][]int16, nClauses, nVar int) int64 {
 				var i int
 
 				for i = startClause; i < endClause; i++ {
-					if !allCondTrue{
+					if !allCondTrue {
 						return
 					}
 
@@ -110,7 +198,7 @@ func main() {
 	clauses := readClauses(nClauses)
 
 	startTime := time.Now()
-	solution := solveClauses(clauses, nClauses, nVar)
+	solution := solveClauses(nClauses, clauses, nVar)
 	fmt.Printf("Time to solve: %s\n", time.Since(startTime))
 
 	if solution > 0 {
