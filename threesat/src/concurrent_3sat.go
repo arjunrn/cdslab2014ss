@@ -77,7 +77,7 @@ func solveClauses(nClauses int, clauses [][]int16, nVar int) int64 {
 		workerChans[i] = make(chan int64, 1)
 	}
 
-	solChan := make(chan int64)
+	solChan := make(chan int64,CORE_COUNT)
 	for i := range workerChans {
 		go testClause(clauses, iVar, int64(nClauses), solChan, workerChans[i])
 	}

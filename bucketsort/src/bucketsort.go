@@ -7,10 +7,10 @@ import (
 	"container/list"
 	"sort"
 	"strings"
-	"time"
 	"bytes"
 	"runtime"
 	"sync"
+	"time"
 )
 
 const (
@@ -50,7 +50,14 @@ func bucketSort(buckets []Bucket) {
 }
 
 func main() {
-	runtime.GOMAXPROCS(4)
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	logHandle, errLogOpen := os.Create("logfile.log")
+	if errLogOpen != nil {
+		panic(errLogOpen)
+	}
+	defer logHandle.Close()
+
+
 	fi, err := os.Open("bucketsort.in")
 	if err != nil { panic(err) }
 
@@ -70,11 +77,8 @@ func main() {
 	}()
 	// make a write buffer
 
-
 	buckets := make([]Bucket, BucketNum)
 	rbuff := make([]byte, ReadBufferSize)
-
-	start := time.Now()
 
 	for n, e := fi.Read(rbuff) ; e == nil ; n, e = fi.Read(rbuff) {
 		readString := strings.TrimSpace(string(rbuff[:n]))
@@ -89,15 +93,14 @@ func main() {
 		}
 	}
 
-	elapsedRead := time.Since(start)
-	fmt.Printf("Reading and file and bucketing took %s\n", elapsedRead)
-
-	start = time.Now()
+	startSortTime := time.Now()
 	bucketSort(buckets)
-	elapsedRead = time.Since(start)
-	fmt.Printf("Bucket Sort took %s\n", elapsedRead)
+	_, writeErr := fmt.Fprintf(logHandle, "Time for bucket sort: %s\n", time.Since(startSortTime))
+	if writeErr != nil {
+		panic(writeErr)
+	}
 
-	start = time.Now()
+
 	writer := bufio.NewWriter(fo)
 	for i := range buckets {
 		stringBuilder := bytes.NewBufferString("")
@@ -107,6 +110,4 @@ func main() {
 		writer.WriteString(stringBuilder.String())
 		writer.Flush()
 	}
-	elapsedRead = time.Since(start)
-	fmt.Printf("Writing to file took %s\n", elapsedRead)
 }

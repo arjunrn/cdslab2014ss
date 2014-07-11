@@ -5,9 +5,10 @@ import (
 	"time"
 	"runtime"
 	"sync"
+	"os"
 )
 
-const CORE_COUNT = 1
+var workerCount int
 
 func gcd(u , v uint64) uint64 {
 	if v == 0 {
@@ -28,7 +29,7 @@ func friendlyNumbers(start, end uint64) {
 	num := make([]uint64, last)
 	den := make([]uint64, last)
 
-	coreAssignmentCount := uint64(last / CORE_COUNT)
+	coreAssignmentCount := uint64(last / uint64(workerCount))
 	if coreAssignmentCount == 0 {
 		coreAssignmentCount = 1
 	}
@@ -65,7 +66,7 @@ func friendlyNumbers(start, end uint64) {
 				n := gcd(numerator, denominator)
 				numerator/=n
 				denominator/=n
-				solIndex := i-start
+				solIndex := i - start
 				num[solIndex] = numerator
 				den[solIndex] = denominator
 				theNum[solIndex] = i
@@ -88,7 +89,14 @@ func friendlyNumbers(start, end uint64) {
 }
 
 func main() {
-	runtime.GOMAXPROCS(8)
+	logHandler, logErr := os.Create("logfile.log")
+	if logErr != nil {
+		panic(logErr)
+	}
+	defer logHandler.Close()
+
+	workerCount = runtime.NumCPU()
+	runtime.GOMAXPROCS(workerCount)
 	var start, end uint64;
 
 	for {
@@ -97,9 +105,10 @@ func main() {
 			break
 		}
 		fmt.Printf("Numbers %d to %d\n", start, end)
+
 		startTime := time.Now()
 		friendlyNumbers(start, end)
-		fmt.Printf("Friendly Numbers Compution took: %s\n", time.Since(startTime))
+		fmt.Fprintf(logHandler, "Time to compute: %s\n", time.Since(startTime))
 	}
 
 }

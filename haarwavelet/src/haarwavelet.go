@@ -12,10 +12,15 @@ import (
 )
 
 func main() {
-	runtime.GOMAXPROCS(8)
+	logHandler, logErr := os.Create("logfile.log")
+	if logErr != nil {
+		panic(logErr)
+	}
+	defer logHandler.Close()
+
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	const SIZE_OF_INT32 = 4
 	SquareRoot2 := math.Sqrt(2)
-	fmt.Printf("Square Root: %f\n", SquareRoot2)
 	inputFileDes, inputErr := os.Open("image.in")
 
 	if inputErr != nil {
@@ -42,14 +47,13 @@ func main() {
 
 	sizeByte := make([]byte, 8)
 
-	readSize, sizeReadErr := inputFileDes.Read(sizeByte)
-	fmt.Printf("Meta Read Size: %d\n", readSize)
+	_, sizeReadErr := inputFileDes.Read(sizeByte)
 	if sizeReadErr != nil {
 		panic(sizeReadErr)
 	}
 
 	size := int(binary.LittleEndian.Uint64(sizeByte))
-	fmt.Printf("Size of Image File: %d\n", size)
+	fmt.Fprintf(logHandler, "Size of Image File: %d\n", size)
 
 	outputFile.Write(sizeByte)
 
@@ -66,7 +70,6 @@ func main() {
 		readCounter+=n
 	}
 	if readCounter != byteBufferSize {
-		fmt.Printf("Bytes Read: %d Byte Buffer Size: %d\n", readCounter, byteBufferSize)
 		panic("Could not read the size")
 	}
 
@@ -74,7 +77,7 @@ func main() {
 	pixels := make([]int32, (size*size))
 	readBytesBuffer := bytes.NewBuffer(bytePixels)
 	binary.Read(readBytesBuffer, binary.LittleEndian, pixels)
-	fmt.Printf("Time to read file into buffer: %s\n", time.Since(fileReadCounter))
+	fmt.Fprintf(logHandler, "Time to read file into buffer: %s\n", time.Since(fileReadCounter))
 	transformCounter := time.Now()
 	for s := size ; s > 1; s/=2 {
 		mid := s / 2
@@ -113,11 +116,10 @@ func main() {
 		}
 		yWaitGroup.Wait()
 	}
-	fmt.Printf("Time to transform: %s\n", time.Since(transformCounter))
+	fmt.Fprintf(logHandler, "Time to transform: %s\n", time.Since(transformCounter))
 
 	writeCounter := time.Now()
 	byteBuffer := new(bytes.Buffer)
-	fmt.Printf("Time to create write buffer: %s\n", time.Since(writeCounter))
 	buffErr := binary.Write(byteBuffer, binary.LittleEndian, pixels)
 	if buffErr != nil {
 		panic(buffErr)
@@ -129,7 +131,7 @@ func main() {
 	if writeErr != nil {
 		panic(writeErr)
 	}
-	fmt.Printf("Time to write to file: %s\n", time.Since(writeCounter))
+	fmt.Fprintf(logHandler, "Time to write to file: %s\n", time.Since(writeCounter))
 
-	fmt.Printf("Total Time: %s\n", time.Since(fileReadCounter))
+	fmt.Fprintf(logHandler, "Total Time: %s\n", time.Since(fileReadCounter))
 }

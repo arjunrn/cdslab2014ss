@@ -6,6 +6,7 @@ import (
 	"time"
 	"runtime"
 	"sync"
+	"os"
 )
 
 var workerCount int64
@@ -86,9 +87,14 @@ func readClauses() {
 }
 
 func main() {
-//	workerCount = int64(runtime.NumCPU())
-	workerCount = int64(4)
+	workerCount = int64(runtime.NumCPU())
 	runtime.GOMAXPROCS(int(workerCount))
+
+	logHandler , logErr := os.Create("logfile.log")
+	if logErr != nil {
+		panic(logErr)
+	}
+	defer logHandler.Close()
 
 	fmt.Scanf("%d %d", &nClauses, &nVar)
 
@@ -96,7 +102,7 @@ func main() {
 
 	startTime := time.Now()
 	solution := solveClauses()
-	fmt.Printf("Time to solve: %s\n", time.Since(startTime))
+	fmt.Fprintf(logHandler, "Time to solve: %s\n", time.Since(startTime))
 
 	if solution > 0 {
 		fmt.Printf("Solution found [%d]: ", solution)
