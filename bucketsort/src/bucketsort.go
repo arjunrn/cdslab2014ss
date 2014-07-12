@@ -51,11 +51,11 @@ func bucketSort(buckets []Bucket) {
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	logHandle, errLogOpen := os.Create("logfile.log")
-	if errLogOpen != nil {
-		panic(errLogOpen)
+	logHandler , logErr := os.OpenFile("logfile.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if logErr != nil {
+		panic(logErr)
 	}
-	defer logHandle.Close()
+	defer logHandler.Close()
 
 
 	fi, err := os.Open("bucketsort.in")
@@ -95,7 +95,7 @@ func main() {
 
 	startSortTime := time.Now()
 	bucketSort(buckets)
-	_, writeErr := fmt.Fprintf(logHandle, "Time for bucket sort: %s\n", time.Since(startSortTime))
+	_, writeErr := fmt.Fprintf(logHandler, "Time for bucket sort: %s\n", time.Since(startSortTime))
 	if writeErr != nil {
 		panic(writeErr)
 	}

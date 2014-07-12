@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	logHandler, logErr := os.Create("logfile.log")
+	logHandler , logErr := os.OpenFile("logfile.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if logErr != nil {
 		panic(logErr)
 	}
@@ -53,7 +53,7 @@ func main() {
 	}
 
 	size := int(binary.LittleEndian.Uint64(sizeByte))
-	fmt.Fprintf(logHandler, "Size of Image File: %d\n", size)
+//	fmt.Fprintf(logHandler, "Size of Image File: %d\n", size)
 
 	outputFile.Write(sizeByte)
 
@@ -64,7 +64,7 @@ func main() {
 
 	readCounter := 0
 	inputFileDes.Seek(8, 0)
-	fileReadCounter := time.Now()
+//	fileReadCounter := time.Now()
 	for n, e := inputFileDes.Read(readBuffer); e == nil; n, e = inputFileDes.Read(readBuffer) {
 		copy(bytePixels[readCounter:readCounter+n], readBuffer[:n])
 		readCounter+=n
@@ -77,7 +77,7 @@ func main() {
 	pixels := make([]int32, (size*size))
 	readBytesBuffer := bytes.NewBuffer(bytePixels)
 	binary.Read(readBytesBuffer, binary.LittleEndian, pixels)
-	fmt.Fprintf(logHandler, "Time to read file into buffer: %s\n", time.Since(fileReadCounter))
+//	fmt.Fprintf(logHandler, "Time to read file into buffer: %s\n", time.Since(fileReadCounter))
 	transformCounter := time.Now()
 	for s := size ; s > 1; s/=2 {
 		mid := s / 2
@@ -118,7 +118,7 @@ func main() {
 	}
 	fmt.Fprintf(logHandler, "Time to transform: %s\n", time.Since(transformCounter))
 
-	writeCounter := time.Now()
+//	writeCounter := time.Now()
 	byteBuffer := new(bytes.Buffer)
 	buffErr := binary.Write(byteBuffer, binary.LittleEndian, pixels)
 	if buffErr != nil {
@@ -131,7 +131,7 @@ func main() {
 	if writeErr != nil {
 		panic(writeErr)
 	}
-	fmt.Fprintf(logHandler, "Time to write to file: %s\n", time.Since(writeCounter))
+//	fmt.Fprintf(logHandler, "Time to write to file: %s\n", time.Since(writeCounter))
 
-	fmt.Fprintf(logHandler, "Total Time: %s\n", time.Since(fileReadCounter))
+//	fmt.Fprintf(logHandler, "Total Time: %s\n", time.Since(fileReadCounter))
 }

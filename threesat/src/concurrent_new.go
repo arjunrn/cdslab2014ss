@@ -90,7 +90,7 @@ func main() {
 	workerCount = int64(runtime.NumCPU())
 	runtime.GOMAXPROCS(int(workerCount))
 
-	logHandler , logErr := os.Create("logfile.log")
+	logHandler , logErr := os.OpenFile("logfile.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if logErr != nil {
 		panic(logErr)
 	}
