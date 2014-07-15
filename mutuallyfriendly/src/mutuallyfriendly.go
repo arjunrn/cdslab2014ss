@@ -77,15 +77,20 @@ func friendlyNumbers(start, end uint64) {
 
 	wg.Wait()
 
-	var i, j uint64
+	var printWg sync.WaitGroup
+	var i uint64
+	printWg.Add(int(last))
 	for i = 0 ; i < last ; i++ {
-		for j = i+1 ; j < last ; j++ {
-			if (num[i] == num[j]) && (den[i] == den[j]) {
-				fmt.Printf("%d and %d are FRIENDLY\n", theNum[i], theNum[j])
+		go func(row uint64) {
+			defer printWg.Done()
+			for j := row+1 ; j < last ; j++ {
+				if (num[row] == num[j]) && (den[row] == den[j]) {
+					fmt.Printf("%d and %d are FRIENDLY\n", theNum[row], theNum[j])
+				}
 			}
-		}
+		}(i)
 	}
-
+	printWg.Wait()
 }
 
 func main() {
